@@ -10,31 +10,30 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Set environment variables and deploy
+      - name: Set deployment variables
+        id: set-vars
         run: |
-          if [[ "${GITHUB_REF##*/}" == "qa" ]]; then
-            echo "ENV=qa" >> $GITHUB_ENV
-            echo "${{ secrets.EC2_KEY_QA }}" > key.pem
-            chmod 600 key.pem
-            ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER_QA }}@${{ secrets.EC2_HOST_QA }} << 'ENDSSH'
-              cd ~/infra-backend-services
-              git pull origin qa
-              docker compose down
-              docker compose up -d --build
-          ENDSSH
-          else
-            echo "ENV=prod" >> $GITHUB_ENV
-            echo "${{ secrets.EC2_KEY_PROD }}" > key.pem
-            chmod 600 key.pem
-            ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER_PROD }}@${{ secrets.EC2_HOST_PROD }} << 'ENDSSH'
-              cd ~/infra-backend-services
-              git pull origin main
-              docker compose down
-              docker compose up -d --build
-          ENDSSH
+          if [[ "${{ github.ref }}" == "refs/heads/qa" ]]; then
+            echo "env=QA" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+            echo "env=PROD" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Connect and deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets[format('EC2_HOST_{0}', steps.set-vars.outputs.env)] }}
+          username: ${{ secrets[format('EC2_USER_{0}', steps.set-vars.outputs.env)] }}
+          key: ${{ secrets[format('EC2_KEY_{0}', steps.set-vars.outputs.env)] }}
+          script: |
+            cd ~/infra-backend-services
+            git pull origin ${{ github.ref_name }}
+            docker compose down
+            docker compose up -d --build
