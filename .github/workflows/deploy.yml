@@ -22,22 +22,35 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/qa" ]]; then
             echo "env=QA" >> $GITHUB_OUTPUT
+            echo "branch=qa" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
             echo "env=PROD" >> $GITHUB_OUTPUT
+            echo "branch=main" >> $GITHUB_OUTPUT
           fi
 
-        -name: Connect and deploy to EC2
+      - name: Connect and deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets[format('EC2_HOST_{0}', steps.set-vars.outputs.env)] }}
           username: ${{ secrets[format('EC2_USER_{0}', steps.set-vars.outputs.env)] }}
           key: ${{ secrets[format('EC2_KEY_{0}', steps.set-vars.outputs.env)] }}
+          port: 22
           script: |
             cd /home/ubuntu
+
             if [ ! -d "infra-backend-services" ]; then
               git clone https://github.com/kev1226/infra-backend-services.git
             fi
+
             cd infra-backend-services
-            git pull origin ${{ github.ref_name }}
+            git fetch origin
+            git reset --hard origin/${{ steps.set-vars.outputs.branch }}
+
+            if ! command -v docker-compose &> /dev/null; then
+              echo "docker-compose no está instalado. Instalando..."
+              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+
             docker-compose down
             docker-compose up -d --build
