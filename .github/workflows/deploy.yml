@@ -26,14 +26,18 @@ jobs:
             echo "env=PROD" >> $GITHUB_OUTPUT
           fi
 
-      - name: Connect and deploy to EC2
+        -name: Connect and deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets[format('EC2_HOST_{0}', steps.set-vars.outputs.env)] }}
           username: ${{ secrets[format('EC2_USER_{0}', steps.set-vars.outputs.env)] }}
           key: ${{ secrets[format('EC2_KEY_{0}', steps.set-vars.outputs.env)] }}
           script: |
-            cd ~/infra-backend-services
+            cd /home/ubuntu
+            if [ ! -d "infra-backend-services" ]; then
+              git clone https://github.com/kev1226/infra-backend-services.git
+            fi
+            cd infra-backend-services
             git pull origin ${{ github.ref_name }}
-            docker compose down
-            docker compose up -d --build
+            docker-compose down
+            docker-compose up -d --build
