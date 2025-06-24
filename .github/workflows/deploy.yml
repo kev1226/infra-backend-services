@@ -50,7 +50,7 @@ jobs:
 
             cp .env.example .env
 
-            # Variables sensibles inyectadas
+            # Inyectar secretos
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
             echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
             echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
@@ -61,7 +61,7 @@ jobs:
             echo "ZOOKEEPER_PORT=${{ secrets.ZOOKEEPER_PORT }}" >> .env
             echo "KAFKA_PORT=${{ secrets.KAFKA_PORT }}" >> .env
 
-            # Verificación de que no estén vacías
+            # Verificar que estén definidas
             required_vars=(
               POSTGRES_PASSWORD
               MYSQL_ROOT_PASSWORD
@@ -74,19 +74,21 @@ jobs:
               KAFKA_PORT
             )
             for var in "${required_vars[@]}"; do
-              if ! grep -q "^$var=" .env || [ -z "$(grep "^$var=" .env | cut -d '=' -f2-)" ]; then
-                echo "ERROR: Variable $var no está definida o está vacía en .env"
+              value=$(grep "^$var=" .env | cut -d '=' -f2-)
+              if [[ -z "$value" ]]; then
+                echo "❌ ERROR: Variable $var no está definida o está vacía en .env"
                 exit 1
               fi
             done
 
             # Instalar docker-compose si no existe
             if ! command -v docker-compose &> /dev/null; then
-              echo "Instalando docker-compose..."
+              echo "🔧 Instalando docker-compose..."
               sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               sudo chmod +x /usr/local/bin/docker-compose
             fi
 
-            # Desplegar
+            echo "🛠️ Desplegando servicios..."
             docker-compose down
             docker-compose up -d --build
+            echo " Despliegue completado."
