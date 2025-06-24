@@ -27,7 +27,7 @@ jobs:
               git pull origin qa
               docker compose down
               docker compose up -d --build
-ENDSSH
+          ENDSSH
           else
             echo "ENV=prod" >> $GITHUB_ENV
             echo "${{ secrets.EC2_KEY_PROD }}" > key.pem
@@ -37,4 +37,4 @@ ENDSSH
               git pull origin main
               docker compose down
               docker compose up -d --build
-ENDSSH
+          ENDSSH
