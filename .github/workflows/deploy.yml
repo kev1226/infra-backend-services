@@ -50,24 +50,43 @@ jobs:
 
             cp .env.example .env
 
+            # Variables sensibles inyectadas
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
             echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
             echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
             echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
+            echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
+            echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> .env
+            echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
+            echo "ZOOKEEPER_PORT=${{ secrets.ZOOKEEPER_PORT }}" >> .env
+            echo "KAFKA_PORT=${{ secrets.KAFKA_PORT }}" >> .env
 
-            required_vars=(POSTGRES_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_PASSWORD REDIS_PASSWORD)
+            # Verificación de que no estén vacías
+            required_vars=(
+              POSTGRES_PASSWORD
+              MYSQL_ROOT_PASSWORD
+              MYSQL_PASSWORD
+              REDIS_PASSWORD
+              POSTGRES_PORT
+              MYSQL_PORT
+              REDIS_PORT
+              ZOOKEEPER_PORT
+              KAFKA_PORT
+            )
             for var in "${required_vars[@]}"; do
               if ! grep -q "^$var=" .env || [ -z "$(grep "^$var=" .env | cut -d '=' -f2-)" ]; then
-                echo " ERROR: Variable $var no está definida en .env"
+                echo "ERROR: Variable $var no está definida o está vacía en .env"
                 exit 1
               fi
             done
 
+            # Instalar docker-compose si no existe
             if ! command -v docker-compose &> /dev/null; then
-              echo " docker-compose no está instalado. Instalando..."
+              echo "Instalando docker-compose..."
               sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               sudo chmod +x /usr/local/bin/docker-compose
             fi
 
+            # Desplegar
             docker-compose down
             docker-compose up -d --build
