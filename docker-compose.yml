@@ -38,7 +38,31 @@ services:
     volumes:
       - redisdata:/data
 
+  mongo-orders:
+    image: mongo:6
+    container_name: infra-mongo-orders
+    restart: always
+    ports:
+      - "${MONGO_ORDERS_PORT}:27017"
+    environment:
+      MONGO_INITDB_DATABASE: orders_db
+    volumes:
+      - mongo_orders_data:/data/db
+
+  mongo-payments:
+    image: mongo:6
+    container_name: infra-mongo-payments
+    restart: always
+    ports:
+      - "${MONGO_PAYMENTS_PORT}:27017"
+    environment:
+      MONGO_INITDB_DATABASE: payments_db
+    volumes:
+      - mongo_payments_data:/data/db
+
 volumes:
   pgdata:
   mysqldata:
   redisdata:
+  mongo_orders_data:
+  mongo_payments_data:

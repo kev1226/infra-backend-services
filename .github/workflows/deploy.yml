@@ -60,6 +60,8 @@ jobs:
             echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
             echo "ZOOKEEPER_PORT=${{ secrets.ZOOKEEPER_PORT }}" >> .env
             echo "KAFKA_PORT=${{ secrets.KAFKA_PORT }}" >> .env
+            echo "MONGO_ORDERS_PORT=${{ secrets.MONGO_ORDERS_PORT }}" >> .env
+            echo "MONGO_PAYMENTS_PORT=${{ secrets.MONGO_PAYMENTS_PORT }}" >> .env
 
             # Verificar que estén definidas
             required_vars=(
@@ -72,23 +74,25 @@ jobs:
               REDIS_PORT
               ZOOKEEPER_PORT
               KAFKA_PORT
+              MONGO_ORDERS_PORT
+              MONGO_PAYMENTS_PORT
             )
             for var in "${required_vars[@]}"; do
               value=$(grep "^$var=" .env | cut -d '=' -f2-)
               if [[ -z "$value" ]]; then
-                echo "❌ ERROR: Variable $var no está definida o está vacía en .env"
+                echo " ERROR: Variable $var no está definida o está vacía en .env"
                 exit 1
               fi
             done
 
             # Instalar docker-compose si no existe
             if ! command -v docker-compose &> /dev/null; then
-              echo "🔧 Instalando docker-compose..."
+              echo " Instalando docker-compose..."
               sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               sudo chmod +x /usr/local/bin/docker-compose
             fi
 
-            echo "🛠️ Desplegando servicios..."
+            echo " Desplegando servicios..."
             docker-compose down
             docker-compose up -d --build
-            echo " Despliegue completado."
+            echo " Despliegue completado exitosamente."
