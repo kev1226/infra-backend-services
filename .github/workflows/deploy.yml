@@ -60,8 +60,6 @@ jobs:
             echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
             echo "ZOOKEEPER_PORT=${{ secrets.ZOOKEEPER_PORT }}" >> .env
             echo "KAFKA_PORT=${{ secrets.KAFKA_PORT }}" >> .env
-            echo "MONGO_ORDERS_PORT=${{ secrets.MONGO_ORDERS_PORT }}" >> .env
-            echo "MONGO_PAYMENTS_PORT=${{ secrets.MONGO_PAYMENTS_PORT }}" >> .env
 
             # Verificar que estén definidas
             required_vars=(
@@ -74,8 +72,6 @@ jobs:
               REDIS_PORT
               ZOOKEEPER_PORT
               KAFKA_PORT
-              MONGO_ORDERS_PORT
-              MONGO_PAYMENTS_PORT
             )
             for var in "${required_vars[@]}"; do
               value=$(grep "^$var=" .env | cut -d '=' -f2-)
